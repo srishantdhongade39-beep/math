@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linear Algebra Lab // Matrix Workbench (Project 18)</title>
+  
+  <!-- Academic Fonts: Source Serif 4 (Headlines/Theorems), Source Sans 3 (UI), JetBrains Mono (Math/Arrays) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+  
+  <!-- MathJax 3 for Exact Mathematical Typography -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: 'global'
+      },
+      startup: {
+        ready: () => {
+          MathJax.startup.defaultReady();
+          console.log('MathJax 3 initialized successfully.');
+        }
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Stitch Mathematical Workstation Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="stitch-workstation">
+
+  <!-- ================= HEADER: ACADEMIC WORKBENCH NAVIGATION ================= -->
+  <header class="ws-header">
+    <div class="ws-header-container">
+      <div class="ws-branding">
+        <div class="ws-logo-mark" aria-hidden="true">A</div>
+        <div class="ws-title-group">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <h1 class="ws-title">Linear Algebra Lab // Matrix Workbench</h1>
+            <span class="ws-badge-pill">Project 18 • Modules 1, 2, 3</span>
+          </div>
+          <div class="ws-subtitle">
+            <span>Null Space, Range &amp; Rank-Nullity Sequential Analyzer</span>
+            <span>•</span>
+            <div class="ws-engine-pill">
+              <span class="ws-engine-dot"></span>
+              <span>SymPy CAS / Exact Rational Mode</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="ws-header-actions">
+        <button id="theme-toggle" class="btn btn-default" title="Toggle Academic Light / Dark Theme">
+          <span id="theme-icon">☾</span> <span id="theme-text">Dark</span>
+        </button>
+        <button id="btn-theory-modal" class="btn btn-default" title="View Linear Algebra Definitions">
+          <span>📖</span> Theory Reference
+        </button>
+        <button id="btn-print-report" class="btn btn-default" title="Print or save as PDF Report">
+          <span>🖨️</span> Export Report
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN WORKBENCH CANVAS ================= -->
+  <main class="ws-main">
+    
+    <!-- Top Configuration Card: Matrix Dimensions & Sample Presets -->
+    <section class="ws-card">
+      <div class="ws-card-header">
+        <div class="ws-card-title-row">
+          <div>
+            <span class="ws-section-tag">INPUT CONFIGURATION</span>
+            <h2 class="ws-card-title">Matrix Construction &amp; Presets</h2>
+          </div>
+          <div class="ws-meta-pills">
+            <span class="meta-pill">Exact Rationals ℚ</span>
+            <span class="meta-pill">Fractions &amp; Decimals Allowed</span>
+            <span class="meta-pill">Up to 8×8</span>
+          </div>
+        </div>
+        <p class="ws-card-description">
+          Configure dimensions, load canonical sample matrices, or enter custom rational coefficients for exact symbolic row-reduction.
+        </p>
+      </div>
+
+      <!-- Presets Strip -->
+      <div class="presets-strip">
+        <div class="presets-heading">
+          <span>⚡ Curated Sample Presets:</span>
+        </div>
+        <div class="presets-grid" id="presets-container">
+          {% for p in presets %}
+          <button class="preset-chip" 
+                  data-preset-id="{{ p.id }}" 
+                  data-rows="{{ p.rows }}" 
+                  data-cols="{{ p.cols }}" 
+                  title="{{ p.description }}">
+            <div class="preset-chip-title">{{ p.name }}</div>
+            <div class="preset-chip-meta">
+              <span>{{ p.rows }} × {{ p.cols }}</span>
+              <span class="preset-chip-tag">{{ p.tag }}</span>
+            </div>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Dimension Controllers & Actions Toolbar -->
+      <div class="ws-controls-bar">
+        <div class="dimension-steppers">
+          <div class="dimension-box">
+            <span>Rows ($m$):</span>
+            <div class="stepper-widget">
+              <button class="stepper-btn" id="btn-row-minus" aria-label="Decrease rows">−</button>
+              <input type="text" id="input-rows" class="stepper-input" value="3" readonly>
+              <button class="stepper-btn" id="btn-row-plus" aria-label="Increase rows">+</button>
+            </div>
+          </div>
+
+          <span class="dim-times">×</span>
+
+          <div class="dimension-box">
+            <span>Cols ($n$):</span>
+            <div class="stepper-widget">
+              <button class="stepper-btn" id="btn-col-minus" aria-label="Decrease columns">−</button>
+              <input type="text" id="input-cols" class="stepper-input" value="3" readonly>
+              <button class="stepper-btn" id="btn-col-plus" aria-label="Increase columns">+</button>
+            </div>
+          </div>
+
+          <div class="quick-sizes">
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">Quick:</span>
+            <button class="size-pill" data-m="2" data-n="2">2×2</button>
+            <button class="size-pill active" data-m="3" data-n="3">3×3</button>
+            <button class="size-pill" data-m="3" data-n="5">3×5 (Wide)</button>
+            <button class="size-pill" data-m="4" data-n="2">4×2 (Tall)</button>
+            <button class="size-pill" data-m="4" data-n="4">4×4</button>
+          </div>
+        </div>
+
+        <div class="actions-cluster">
+          <button id="btn-clear-grid" class="btn btn-default" title="Set all entries to 0">
+            <span>Clear [0]</span>
+          </button>
+          <button id="btn-identity-grid" class="btn btn-default" title="Fill with Identity matrix">
+            <span>Identity [I]</span>
+          </button>
+          <button id="btn-random-grid" class="btn btn-default" title="Fill with random integers">
+            <span>Randomize</span>
+          </button>
+          <button id="btn-analyze" class="btn btn-primary" title="Execute analysis pipeline">
+            <span class="btn-spinner" id="btn-spinner" aria-hidden="true" style="display: none;"></span>
+            <span class="btn-text">⚡ Analyze Matrix</span>
+            <kbd style="background: rgba(255,255,255,0.25); padding: 0.1rem 0.35rem; border-radius: 2px; font-family: var(--font-mono); font-size: 0.7rem;">↵</kbd>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tactile Matrix Input Bracket -->
+      <div class="matrix-input-stage">
+        <div class="matrix-input-wrapper">
+          <div class="matrix-label-eq">A =</div>
+          <div class="math-bracket-container">
+            <div class="math-bracket-left"></div>
+            <div id="matrix-grid" class="matrix-grid">
+              <!-- Dynamically populated matrix cells -->
+            </div>
+            <div class="math-bracket-right"></div>
+          </div>
+          <div class="matrix-subscript-dim" id="matrix-dim-label">3 × 3</div>
+
+          <!-- Linear Transformation Mapping Descriptor -->
+          <div class="transformation-descriptor" id="transformation-box">
+            <div class="transformation-formula" id="transformation-mapping">T : ℝ³ → ℝ³</div>
+            <div class="transformation-sub">Linear transformation: $T(\mathbf{x}) = A\mathbf{x}$</div>
+            <div class="transformation-sub" id="transformation-dims" style="color: var(--text-muted);">
+              Domain: $\mathbb{R}^3$ ($n=3$) • Codomain: $\mathbb{R}^3$ ($m=3$)
+            </div>
+          </div>
+        </div>
+
+        <div class="matrix-input-helper">
+          <span style="color: var(--primary); font-weight: 700;">ℹ</span>
+          <span>
+            Enter entries as integers (<code>3</code>, <code>-5</code>), fractions (<code>1/3</code>, <code>-4/7</code>), or decimals (<code>0.5</code>). Navigate with <strong>Arrow keys</strong>, <strong>Tab</strong>, or press <strong>Enter</strong> to analyze.
+          </span>
+        </div>
+      </div>
+
+      <!-- Validation Error Toast -->
+      <div id="error-banner" class="error-banner hidden" role="alert">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.1rem;">⚠️</span>
+          <div>
+            <strong>Input Error:</strong>
+            <span id="error-message">Invalid input.</span>
+          </div>
+        </div>
+        <button id="btn-close-error" class="btn-icon" aria-label="Close error">&times;</button>
+      </div>
+    </section>
+
+    <!-- 7-Stage Interactive Derivation Pipeline -->
+    <section class="ws-card" style="padding: 1.25rem 1.5rem;">
+      <div class="ws-card-header" style="margin-bottom: 0.875rem;">
+        <div class="ws-card-title-row">
+          <div>
+            <span class="ws-section-tag">DERIVATION PIPELINE</span>
+            <h2 class="ws-card-title">Sequential Mathematical Pipeline</h2>
+          </div>
+          <div class="ws-meta-pills">
+            <span class="meta-pill">7 Sequential Verification Stages</span>
+            <span class="meta-pill">SymPy Exact Gauss-Jordan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pipeline Stepper Bar -->
+      <div class="pipeline-stepper-strip" id="pipeline-stepper">
+        <div class="pipeline-stepper-list">
+          <div class="pipeline-step-item active" data-target="stage-card-1">
+            <span class="step-num">1</span>
+            <span class="step-label">Matrix A</span>
+          </div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step-item" data-target="stage-card-2">
+            <span class="step-num">2</span>
+            <span class="step-label">RREF [R]</span>
+          </div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step-item" data-target="stage-card-3">
+            <span class="step-num">3</span>
+            <span class="step-label">Pivots &amp; Free</span>
+          </div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step-item" data-target="stage-card-4">
+            <span class="step-num">4</span>
+            <span class="step-label">Rank</span>
+          </div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step-item" data-target="stage-card-5">
+            <span class="step-num">5</span>
+            <span class="step-label">Null Space</span>
+          </div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step-item" data-target="stage-card-6">
+            <span class="step-num">6</span>
+            <span class="step-label">Range Basis</span>
+          </div>
+          <span class="pipeline-arrow">→</span>
+          <div class="pipeline-step-item" data-target="stage-card-7">
+            <span class="step-num">7</span>
+            <span class="step-label">Theorem Check</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stages Container -->
+      <div id="stages-container" class="stages-flow" style="margin-top: 1.5rem;">
+        <!-- Welcome Placeholder State -->
+        <div class="welcome-placeholder-card" id="welcome-placeholder">
+          <div class="placeholder-icon">📐</div>
+          <h3 class="placeholder-title">Awaiting Matrix Evaluation</h3>
+          <p class="placeholder-text">
+            Select row &amp; column dimensions, load any sample preset, or enter custom entries above. Then click <strong>Analyze Matrix</strong> or press <strong>Enter</strong> to execute the full 7-stage verification engine.
+          </p>
+          <div class="placeholder-features">
+            <div class="feat-badge">Exact SymPy Gauss-Jordan RREF</div>
+            <div class="feat-badge">Rigorous Av = 0 Nullity Proof</div>
+            <div class="feat-badge">Original Pivot Range Extraction</div>
+            <div class="feat-badge">Rank-Nullity Dimension Theorem Verified</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= THEORY REFERENCE MODAL ================= -->
+  <div id="theory-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-theory-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-theory-title" class="modal-title">Linear Algebra: Four Fundamental Subspaces &amp; Dimension Theorem</h3>
+        <button id="btn-close-modal" class="btn-icon" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="theory-section">
+          <h4>1. Reduced Row Echelon Form (RREF)</h4>
+          <p>
+            A matrix is in RREF if:
+            (a) all non-zero rows precede all-zero rows;
+            (b) each leading entry of a row is 1;
+            (c) each leading 1 is strictly to the right of the leading 1 in the row above;
+            (d) each leading 1 is the sole non-zero entry in its entire column.
+          </p>
+        </div>
+
+        <div class="theory-section">
+          <h4>2. Pivot and Free Variables</h4>
+          <p>
+            Columns possessing leading 1s in $\text{RREF}(A)$ are <strong>pivot columns</strong>, corresponding to <strong>basic (bound) variables</strong>.
+            Columns devoid of leading 1s are <strong>non-pivot columns</strong>, corresponding to <strong>free variables</strong> (parameters).
+          </p>
+        </div>
+
+        <div class="theory-section">
+          <h4>3. Rank of a Matrix</h4>
+          <p>
+            $\text{Rank}(A)$ is strictly defined as the number of pivot columns in $\text{RREF}(A)$, which identically equals the dimension of the column space (range) of $A$.
+          </p>
+        </div>
+
+        <div class="theory-section">
+          <h4>4. Null Space (Kernel) &amp; Nullity</h4>
+          <p>
+            The null space is $\text{Null}(A) = \{\mathbf{x} \in \mathbb{R}^n \mid A\mathbf{x} = \mathbf{0}\}$.
+            $\text{Nullity}(A) = \dim(\text{Null}(A)) = \text{number of free variables}$.
+            Each basis vector satisfies $A\mathbf{v} = \mathbf{0}$. If there are no free variables, $\text{Null}(A) = \{\mathbf{0}\}$ and $\text{Nullity}(A) = 0$.
+          </p>
+        </div>
+
+        <div class="theory-section">
+          <h4>5. Range (Column Space) Basis</h4>
+          <p>
+            The range $\text{Range}(A) = \text{Col}(A)$ is the span of the columns of $A$.
+            <strong>Crucial Theorem:</strong> A basis for $\text{Range}(A)$ is formed by the pivot columns of the <em>original matrix</em> $A$, never by the columns of $\text{RREF}(A)$, because elementary row operations alter column spaces.
+          </p>
+        </div>
+
+        <div class="theory-section">
+          <h4>6. Rank-Nullity Theorem (The Dimension Theorem)</h4>
+          <p>
+            For any linear map $T: \mathbb{R}^n \to \mathbb{R}^m$ represented by an $m \times n$ matrix $A$:
+            $$\text{Rank}(A) + \text{Nullity}(A) = n$$
+            The total dimension of domain $\mathbb{R}^n$ is conserved: exactly $\text{Rank}(A)$ dimensions map into the image in $\mathbb{R}^m$, while $\text{Nullity}(A)$ dimensions are collapsed to the zero vector.
+          </p>
+        </div>
+
+        <div class="theory-section">
+          <h4>7. The Four Fundamental Subspaces (Gilbert Strang Framework)</h4>
+          <div class="stitch-table-wrapper" style="margin-top: 0.5rem;">
+            <table class="stitch-table">
+              <thead>
+                <tr>
+                  <th>Subspace</th>
+                  <th>Notation</th>
+                  <th>Ambient Space</th>
+                  <th>Dimension</th>
+                  <th>Orthogonal Complement</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="color: var(--primary); font-weight: 600;">Column Space</td>
+                  <td>$\text{Col}(A)$</td>
+                  <td>$\mathbb{R}^m$</td>
+                  <td>$r = \text{Rank}(A)$</td>
+                  <td>Left Null Space $\text{Null}(A^T)$</td>
+                </tr>
+                <tr>
+                  <td style="color: var(--secondary); font-weight: 600;">Null Space</td>
+                  <td>$\text{Null}(A)$</td>
+                  <td>$\mathbb{R}^n$</td>
+                  <td>$n - r = \text{Nullity}(A)$</td>
+                  <td>Row Space $\text{Row}(A)$</td>
+                </tr>
+                <tr>
+                  <td>Row Space</td>
+                  <td>$\text{Row}(A)$</td>
+                  <td>$\mathbb{R}^n$</td>
+                  <td>$r = \text{Rank}(A)$</td>
+                  <td>Null Space $\text{Null}(A)$</td>
+                </tr>
+                <tr>
+                  <td>Left Null Space</td>
+                  <td>$\text{Null}(A^T)$</td>
+                  <td>$\mathbb{R}^m$</td>
+                  <td>$m - r$</td>
+                  <td>Column Space $\text{Col}(A)$</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-modal-done" class="btn btn-primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="ws-footer">
+    <div class="ws-footer-container">
+      <div>
+        <strong>Linear Algebra Lab // Matrix Workbench</strong> • Project 18 (Modules 1, 2, 3)
+      </div>
+      <div>
+        Exact Symbolic Engine: <a href="https://www.sympy.org" target="_blank" rel="noopener">SymPy</a> &amp; Python Flask
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
