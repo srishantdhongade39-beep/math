@@ -3,8 +3,8 @@
   "functions": {
     "api/index.py": {
       "includeFiles": [
-        "templates/**/*",
-        "static/**/*",
+        "templates/**",
+        "static/**",
         "math_engine.py",
         "app.py"
       ]
