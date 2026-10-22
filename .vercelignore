@@ -1,0 +1,6 @@
+.git
+.vscode
+__pycache__
+*.pyc
+*.pdf
+test_math_engine.py

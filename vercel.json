@@ -2,12 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.py": {
-      "includeFiles": [
-        "templates/**",
-        "static/**",
-        "math_engine.py",
-        "app.py"
-      ]
+      "includeFiles": "{templates/**,static/**,app.py,math_engine.py}"
     }
   },
   "rewrites": [
